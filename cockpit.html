@@ -1,0 +1,105 @@
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Secretsociety23 Command Deck</title>
+  <style>
+    body {
+      background-color: #0f0f0f;
+      color: #00ffcc;
+      font-family: monospace, monospace;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 50px 10px;
+      margin: 0;
+      min-height: 100vh;
+    }
+    h1 {
+      margin-bottom: 30px;
+      font-size: 2.5rem;
+      letter-spacing: 0.03em;
+      user-select: none;
+    }
+    button {
+      background-color: transparent;
+      border: 2px solid #00ffcc;
+      color: #00ffcc;
+      padding: 14px 32px;
+      margin: 12px;
+      font-size: 18px;
+      font-weight: 600;
+      border-radius: 8px;
+      cursor: pointer;
+      user-select: none;
+      transition: background-color 0.25s ease, color 0.25s ease;
+      min-width: 200px;
+      box-shadow: 0 0 8px #00ffcc80;
+    }
+    button:hover,
+    button:focus {
+      background-color: #00ffcc;
+      color: #0f0f0f;
+      outline: none;
+    }
+    .log {
+      margin-top: 40px;
+      width: 90%;
+      max-width: 680px;
+      background-color: #111;
+      border: 2px solid #00ffcc;
+      padding: 24px;
+      font-size: 15px;
+      line-height: 1.5;
+      font-family: 'Courier New', Courier, monospace;
+      white-space: pre-wrap;
+      box-shadow: inset 0 0 12px #00ffcc40;
+      border-radius: 12px;
+      min-height: 180px;
+      user-select: text;
+      overflow-y: auto;
+    }
+  </style>
+</head>
+<body>
+  <h1>🧠 Secretsociety23 Command Deck</h1>
+  
+  <button id="ignite" aria-label="Ignite Protocol">Ignite Protocol</button>
+  <button id="liquidity" aria-label="Request Liquid Cash">Request Liquid Cash</button>
+  <button id="upload" aria-label="Upload Codex">Upload Codex</button>
+  
+  <div class="log" id="log" aria-live="polite" role="log" tabindex="0">
+    Awaiting command...
+  </div>
+
+  <script>
+    const logEl = document.getElementById("log");
+
+    /**
+     * Logs the command execution with a timestamp, prepending to existing logs.
+     * @param {string} command 
+     */
+    function routeCommand(command) {
+      const timestamp = new Date().toISOString();
+      logEl.textContent = `[${timestamp}] Executing: ${command}\n\n` + logEl.textContent;
+    }
+
+    // Add event listeners for buttons to route their commands
+    document.getElementById("ignite").addEventListener("click", () => {
+      routeCommand("Ignition protocol triggered. Mesh relay warming.");
+    });
+
+    document.getElementById("liquidity").addEventListener("click", () => {
+      routeCommand("Liquidity request staged. Awaiting clearance.");
+    });
+
+    document.getElementById("upload").addEventListener("click", () => {
+      routeCommand("Codex upload initiated. Scroll-seal engaged.");
+    });
+  </script>
+</body>
+</html>
+```
