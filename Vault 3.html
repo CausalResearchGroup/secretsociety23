@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Pinata Cloud Upload - Sovereign Vault</title>
+<style>
+  body { background:#121212; color:#eee; font-family:sans-serif; padding:20px; }
+  button { padding:10px 20px; margin:10px 0; cursor:pointer; }
+  #log { white-space: pre-wrap; background:#222; padding:10px; min-height:150px; }
+</style>
+</head>
+<body>
+
+<h2>Pinata Cloud Direct Upload</h2>
+<input type="file" id="fileInput" />
+<button onclick="uploadToPinata()">Upload to Pinata</button>
+
+<pre id="log"></pre>
+
+<script>
+  const logEl = document.getElementById('log');
+  const pinataJWT = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySW5mb3JtYXRpb24iOnsiaWQiOiJkZWRjMjU4ZC0yZTRmLTQ1ZTYtOTQ1ZS1kYmJjNjNhMWZkNWUiLCJlbWFpbCI6ImpvZXBpdG5lcjMyQGdtYWlsLmNvbSIsImVtYWlsX3ZlcmlmaWVkIjp0cnVlLCJwaW5fcG9saWN5Ijp7InJlZ2lvbnMiOlt7ImRlc2lyZWRSZXBsaWNhdGlvbkNvdW50IjoxLCJpZCI6IkZSQTEifSx7ImRlc2lyZWRSZXBsaWNhdGlvbkNvdW50IjoxLCJpZCI6Ik5ZQzEifV0sInZlcnNpb24iOjF9LCJtZmFfZW5hYmxlZCI6ZmFsc2UsInN0YXR1cyI6IkFDVElWRSJ9LCJhdXRoZW50aWNhdGlvblR5cGUiOiJzY29wZWRLZXkiLCJzY29wZWRLZXlLZXkiOiIzY2FmNjA0M2YxZTU4ZDEzZWZlNyIsInNjb3BlZEtleVNlY3JldCI6IjYzZjM2ZGZmYjlkZjE1NDk2NWRkMDQ1NmIzNGYzNmMzMGFjMTY4N2EyYTQ5MmQ2MGMyZTIzZDJiZmY3NTNlODEiLCJleHAiOjE3ODc2MzA4MTN9.aWI68LtdmYI2SEM_la85TX-BiHGjhyRL3gfq3qOIfRg';
+
+  function log(text) {
+    logEl.textContent += text + '\n';
+  }
+
+  async function uploadToPinata() {
+    const input = document.getElementById('fileInput');
+    if (input.files.length === 0) {
+      alert('Select a file first');
+      return;
+    }
+    const file = input.files[0];
+    log(`Uploading: ${file.name} (${file.size} bytes)`);
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      const response = await fetch('https://api.pinata.cloud/pinning/pinFileToIPFS', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${pinataJWT}`
+        },
+        body: formData
+      });
+
+      if (!response.ok) {
+        const error = await response.text();
+        log(`Upload failed: ${error}`);
+        return;
+      }
+
+      const json = await response.json();
+      log(`Upload successful! IPFS Hash: ${json.IpfsHash}`);
+      log(`Gateway URL: https://gateway.pinata.cloud/ipfs/${json.IpfsHash}`);
+
+    } catch (err) {
+      log('Error: ' + err.message);
+    }
+  }
+</script>
+
+</body>
+</html>

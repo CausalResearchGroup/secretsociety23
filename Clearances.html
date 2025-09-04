@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Ghost Protocol Clearance Dashboard</title>
+<script src="https://cdn.jsdelivr.net/npm/js-sha256@0.9.0/build/sha256.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
+<style>
+  body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: #121212;
+    color: #e0e0e0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 2rem;
+    height: 100vh;
+    margin: 0;
+  }
+  h1 {
+    margin-bottom: 0.5rem;
+    font-weight: 700;
+  }
+  #key {
+    word-break: break-all;
+    margin-bottom: 2rem;
+    background: #1f1f1f;
+    padding: 1rem;
+    border-radius: 8px;
+    font-family: monospace;
+  }
+  #token {
+    margin-top: 1rem;
+    font-family: monospace;
+    font-size: 1.2rem;
+    background: #2c2c2c;
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+  }
+  #qr {
+    margin-top: 2rem;
+    width: 200px;
+    height: 200px;
+    background: #fff;
+    padding: 1rem;
+    border-radius: 12px;
+  }
+</style>
+</head>
+<body>
+<h1>Ghost Protocol Clearance Dashboard</h1>
+<p><strong>Master Clearance Cryptographic Key (Base64):</strong></p>
+<div id="key"></div>
+<p><strong>Current HMAC-SHA256 Token:</strong></p>
+<div id="token"></div>
+<div id="qr"></div>
+
+<script>
+// Base64 master key provided
+const base64MasterKey = 's4kf7dX9pJYZcmrF2qMEzN9IVpRl8zZAXVhuU83pzsk0=';
+
+document.getElementById('key').innerText = base64MasterKey;
+
+// Decode base64 to raw string for use in HMAC
+function base64ToUint8Array(base64) {
+  const binaryString = atob(base64);
+  const len = binaryString.length;
+  const bytes = new Uint8Array(len);
+  for (let i = 0; i < len; i++) {
+    bytes[i] = binaryString.charCodeAt(i);
+  }
+  return bytes;
+}
+
+// Generate HMAC-SHA256 using Web Crypto API
+async function generateHMACToken(message, keyBytes) {
+  const cryptoKey = await crypto.subtle.importKey(
+    'raw',
+    keyBytes,
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign']
+  );
+  const encoder = new TextEncoder();
+  const data = encoder.encode(message);
+  const signature = await crypto.subtle.sign('HMAC', cryptoKey, data);
+  return Array.from(new Uint8Array(signature)).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+async function updateToken() {
+  const keyBytes = base64ToUint8Array(base64MasterKey);
+  const timestamp = new Date().toISOString();
+  const message = `Joseph Pitner Clearance Document Timestamp: ${timestamp}`;
+  const hmacToken = await generateHMACToken(message, keyBytes);
+  
+  document.getElementById('token').innerText = hmacToken;
+  
+  // Generate QR code for token
+  const qrCodeContainer = document.getElementById('qr');
+  qrCodeContainer.innerHTML = '';
+  QRCode.toCanvas(hmacToken, { width: 180 }, function (error, canvas) {
+    if (error) console.error(error);
+    qrCodeContainer.appendChild(canvas);
+  });
+}
+
+// Initial fill and then update every 60 seconds 
+updateToken();
+setInterval(updateToken, 60000);
+</script>
+</body>
+</html>

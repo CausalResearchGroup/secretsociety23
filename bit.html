@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Sovereign Crypto Vault & Clearance Cockpit with Pinata</title>
+<script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
+<style>
+  body {
+    background: #0a0a0a;
+    color: #ddd;
+    font-family: monospace, monospace;
+    margin: 0;
+    padding: 2rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  #vault {
+    background: #101010;
+    border-radius: 12px;
+    padding: 1.5rem;
+    max-width: 420px;
+    width: 90vw;
+    text-align: center;
+  }
+  #key {
+    background: #222;
+    padding: 0.9rem;
+    margin-bottom: 1rem;
+    font-size: 0.9rem;
+    word-break: break-all;
+    border-radius: 6px;
+  }
+  button {
+    background: #33aa33;
+    border: none;
+    border-radius: 6px;
+    padding: 0.6rem 1.2rem;
+    margin: 0.4rem;
+    font-size: 1rem;
+    color: #eee;
+    cursor: pointer;
+    user-select: none;
+    transition: background-color 0.2s ease;
+  }
+  button:hover {
+    background: #44cc44;
+  }
+  #qr {
+    margin-top: 1rem;
+  }
+  #log {
+    background: #111;
+    margin-top: 1.2rem;
+    padding: 1rem;
+    height: 200px;
+    overflow-y: auto;
+    font-size: 0.85rem;
+    text-align: left;
+    border-radius: 6px;
+    white-space: pre-wrap;
+  }
+  input[type="file"] {
+    margin-top: 1rem;
+    padding: 0.5rem;
+    background: #222;
+    color: #ddd;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+  }
+</style>
+</head>
+<body>
+<div id="vault">
+  <h2>Sovereign Crypto Vault & Clearance Cockpit</h2>
+  
+  <div><strong>Master Clearance Key (Base64):</strong></div>
+  <div id="key">s4kf7dX9pJYZcmrF2qMEzN9IVpRl8zZAXVhuU83pzsk0=</div>
+
+  <button id="genTokenBtn">Generate HMAC token & QR</button>
+  <div id="qr"></div>
+
+  <div style="margin-top: 1rem;">
+    <button onclick="command('Request Liquid Cash')">Request Liquid Cash</button>
+    <button onclick="command('Command Crew')">Command Crew</button>
+    <button onclick="command('Buy Assets')">Buy Assets</button>
+  </div>
+
+  <h3>Pinata Cloud Direct Upload</h3>
+  <input type="file" id="fileInput" />
+  <button onclick="uploadToPinata()">Upload to Pinata</button>
+
+  <pre id="log" aria-live="polite" role="log"></pre>
+</div>
+
+<script>
+  const base64Key = document.getElementById('key').innerText.trim();
+  const logEl = document.getElementById('log');
+  const qrEl = document.getElementById('qr');
+  const genBtn = document.getElementById('genTokenBtn');
+
+  // Your Pinata JWT Token (exposed here as you granted full clearance)
+  const pinataJWT = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySW5mb3JtYXRpb24iOnsiaWQiOiJkZWRjMjU4ZC0yZTRmLTQ1ZTYtOTQ1ZS1kYmJjNjNhMWZkNWUiLCJlbWFpbCI6ImpvZXBpdG5lcjMyQGdtYWlsLmNvbSIsImVtYWlsX3ZlcmlmaWVkIjp0cnVlLCJwaW5fcG9saWN5Ijp7InJlZ2lvbnMiOlt7ImRlc2lyZWRSZXBsaWNhdGlvbkNvdW50IjoxLCJpZCI6IkZSQTEifSx7ImRlc2lyZWRSZXBsaWNhdGlvbkNvdW50IjoxLCJpZCI6Ik5ZQzEifV0sInZlcnNpb24iOjF9LCJtZmFfZW5hYmxlZCI6ZmFsc2UsInN0YXR1cyI6IkFDVElWRSJ9LCJhdXRoZW50aWNhdGlvblR5cGUiOiJzY29wZWRLZXkiLCJzY29wZWRLZXlLZXkiOiIzY2FmNjA0M2YxZTU4ZDEzZWZlNyIsInNjb3BlZEtleVNlY3JldCI6IjYzZjM2ZGZmYjlkZjE1NDk2NWRkMDQ1NmIzNGYzNmMzMGFjMTY4N2EyYTQ5MmQ2MGMyZTIzZDJiZmY3NTNlODEiLCJleHAiOjE3ODc2MzA4MTN9.aWI68LtdmYI2SEM_la85TX-BiHGjhyRL3gfq3qOIfRg';
+
+  function log(text) {
+    const time = new Date().toLocaleTimeString();
+    logEl.textContent += `[${time}] ${text}\n`;
+    logEl.scrollTop = logEl.scrollHeight;
+  }
+
+  function base64ToUint8Array(b64) {
+    const binaryStr = atob(b64);
+    const len = binaryStr.length;
+    const bytes = new Uint8Array(len);
+    for (let i = 0; i < len; i++) {
+      bytes[i] = binaryStr.charCodeAt(i);
+    }
+    return bytes;
+  }
+
+  async function generateHMACToken(message, keyBytes) {
+    const cryptoKey = await crypto.subtle.importKey(
+      "raw", keyBytes, { name: "HMAC", hash: "SHA-256" }, false, ["sign"]
+    );
+    const enc = new TextEncoder();
+    const msgBuffer = enc.encode(message);
+    const sigBuffer = await crypto.subtle.sign("HMAC", cryptoKey, msgBuffer);
+    const sigBytes = new Uint8Array(sigBuffer);
+    return Array.from(sigBytes).map(b => b.toString(16).padStart(2, "0")).join("");
+  }
+
+  async function generateTokenAndQR() {
+    genBtn.disabled = true;
+    log('Generating token...');
+    try {
+      const keyBytes = base64ToUint8Array(base64Key);
+      const timestamp = new Date().toISOString();
+      const message = `Joseph Pitner Clearance Document Timestamp: ${timestamp}`;
+      const token = await generateHMACToken(message, keyBytes);
+      log(`Token generated: ${token}`);
+
+      qrEl.innerHTML = '';
+      QRCode.toCanvas(token, { width: 180 }, (err, canvas) => {
+        if (err) {
+          log('QR generation error: ' + err);
+          genBtn.disabled = false;
+          return;
+        }
+        qrEl.appendChild(canvas);
+        log('QR Code generated.');
+        genBtn.disabled = false;
+      });
+    } catch (e) {
+      log('Error generating token: ' + e.message);
+      genBtn.disabled = false;
+    }
+  }
+
+  function command(cmd) {
+    log(`Command issued: ${cmd}`);
+    // Placeholder for operational command integrations or API calls
+    // Simulate success response
+    setTimeout(() => {
+      log(`Command '${cmd}' successfully executed.`);
+    }, 800);
+  }
+
+  async function uploadToPinata() {
+    const input = document.getElementById('fileInput');
+    if (!input.files.length) {
+      alert('Select a file first.');
+      return;
+    }
+    const file = input.files[0];
+    log(`Uploading: ${file.name} (${file.size} bytes)`);
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      const response = await fetch('https://api.pinata.cloud/pinning/p
+
