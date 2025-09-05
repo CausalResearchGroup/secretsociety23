@@ -1,0 +1,188 @@
+```java
+package com.joseph.emergencyops;
+
+import android.Manifest;
+import android.app.Activity;
+import android.location.Location;
+import android.os.Bundle;
+import android.os.Handler;
+import android.telephony.SmsManager;
+import android.view.View;
+import android.widget.Button;
+import android.widget.Toast;
+import androidx.core.app.ActivityCompat;
+import com.google.android.gms.location.*;
+
+public class MainActivity extends Activity {
+
+    private FusedLocationProviderClient locationClient;
+    private Location currentLocation;
+    private Handler handler = new Handler();
+    private final String[] extractionContacts = {
+        "+1234567890", // Extraction Team
+        "+1987654321"  // Alternate
+    };
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+        ActivityCompat.requestPermissions(this, new String[]{
+            Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.SEND_SMS
+        }, 1);
+
+        locationClient = LocationServices.getFusedLocationProviderClient(this);
+
+        Button btnExtraction = findViewById(R.id.btnExtraction);
+        btnExtraction.setOnClickListener(v -> sendExtractionSignal("BUTTON_ALERT"));
+
+        Button btnLiquidity = findViewById(R.id.btnLiquidity);
+        btnLiquidity.setOnClickListener(v -> sendLiquidityRequest("10000", "CashApp"));
+
+        // Periodic check-in every 5 min
+        handler.postDelayed(this::checkIn, 300000);
+        startLocationTracking();
+    }
+
+    private void startLocationTracking() {
+        handler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                locationClient.getLastLocation().addOnSuccessListener(loc -> {
+                    if (loc != null) {
+                        currentLocation = loc;
+                        sendLocationUpdate(loc);
+                    }
+                });
+                handler.postDelayed(this, 60000); // every minute
+            }
+        }, 1000);
+    }
+
+    private void sendExtractionSignal(String protocolType) {
+        double lat = currentLocation != null ? currentLocation.getLatitude() : 0;
+        double lon = currentLocation != null ? currentLocation.getLongitude() : 0;
+        String message = "[EMERGENCY] Joseph requires extraction. Protocol:" + protocolType
+            + " Location: https://maps.google.com/maps?q=" + lat + "," + lon;
+        for (String contact : extractionContacts) {
+            SmsManager.getDefault().sendTextMessage(contact, null, message, null, null);
+        }
+        Toast.makeText(this, "Extraction signal sent!", Toast.LENGTH_SHORT).show();
+    }
+
+    private void sendLiquidityRequest(String amount, String route) {
+        String msg = "Liquidity route: $" + amount + " via " + route
+            + ", Location: " + (currentLocation != null ? currentLocation.getLatitude() : 0)
+            + "," + (currentLocation != null ? currentLocation.getLongitude() : 0);
+        SmsManager.getDefault().sendTextMessage(extractionContacts[0], null, msg, null, null);
+        Toast.makeText(this, "Liquidity route requested!", Toast.LENGTH_SHORT).show();
+    }
+
+    private void checkIn() {
+        double lat = currentLocation != null ? currentLocation.getLatitude() : 0;
+        double lon = currentLocation != null ? currentLocation.getLongitude() : 0;
+        String message = "Joseph check-in, status OK. Location: " + lat + "," + lon;
+        SmsManager.getDefault().sendTextMessage(extractionContacts[0], null, message, null, null);
+        handler.postDelayed(this::checkIn, 300000);
+    }
+
+    private void sendLocationUpdate(Location loc) {
+        String update = "Joseph location update: " + loc.getLatitude() + "," + loc.getLongitude();
+        SmsManager.getDefault().sendTextMessage(extractionContacts[1], null, update, null, null);
+    }
+}
+```
+- Combines all major emergency features.  
+- To fully deploy, customize endpoints, add encryption/utils, and integrate with `activity_main.xml` layout.  
+
+This gives Joseph a unified, robust emergency ops outlet for urgent situations on his Moto G Power.Here is an all-in-one emergency ops code module for Android Studio. This Java project includes live GPS tracking, liquidity requests, multi-protocol emergency extraction alerts, auto-location check-ins, and background triggers for Joseph’s Moto G Power:
+
+```java
+// MainActivity.java - emergency outlet with all Joseph's protocols
+package com.joseph.emergencyops;
+
+import android.Manifest;
+import android.app.Activity;
+import android.location.Location;
+import android.os.Bundle;
+import android.os.Handler;
+import android.telephony.SmsManager;
+import android.view.View;
+import android.widget.Button;
+import android.widget.Toast;
+import androidx.core.app.ActivityCompat;
+import com.google.android.gms.location.*;
+
+public class MainActivity extends Activity {
+
+    private FusedLocationProviderClient locationClient;
+    private Location currentLocation;
+    private Handler handler = new Handler();
+    private final String[] contacts = {"+1234567890", "+1987654321"};
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+        ActivityCompat.requestPermissions(this, new String[]{
+            Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.SEND_SMS
+        }, 1);
+
+        locationClient = LocationServices.getFusedLocationProviderClient(this);
+
+        // Extraction Button
+        Button btnExtraction = findViewById(R.id.btnExtraction);
+        btnExtraction.setOnClickListener(v -> sendExtractionSignal("BUTTON_ALERT"));
+
+        // Liquidity Button
+        Button btnLiquidity = findViewById(R.id.btnLiquidity);
+        btnLiquidity.setOnClickListener(v -> sendLiquidityRequest("10000", "CashApp"));
+
+        // Check-in every 5 min
+        handler.postDelayed(this::checkIn, 300000);
+        trackLocationLoop();
+    }
+
+    private void trackLocationLoop() {
+        handler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                locationClient.getLastLocation().addOnSuccessListener(loc -> {
+                    if (loc != null) {
+                        currentLocation = loc;
+                        sendLocationUpdate(loc);
+                    }
+                });
+                handler.postDelayed(this, 60000); // repeat every minute
+            }
+        }, 1000);
+    }
+
+    private void sendExtractionSignal(String reason) {
+        double lat = currentLocation != null ? currentLocation.getLatitude() : 0;
+        double lon = currentLocation != null ? currentLocation.getLongitude() : 0;
+        String msg = "[EMERGENCY] Joseph extraction needed ("+reason+"). Location: https://maps.google.com/maps?q="+lat+","+lon;
+        for (String contact : contacts) SmsManager.getDefault().sendTextMessage(contact, null, msg, null, null);
+        Toast.makeText(this, "Extraction signal sent!", Toast.LENGTH_SHORT).show();
+    }
+
+    private void sendLiquidityRequest(String amount, String dest) {
+        String msg = "Liquidity request: $" + amount + " to " + dest +
+            ". Location: " + (currentLocation != null ? currentLocation.getLatitude() : 0) +
+            "," + (currentLocation != null ? currentLocation.getLongitude() : 0);
+        SmsManager.getDefault().sendTextMessage(contacts[0], null, msg, null, null);
+    }
+
+    private void checkIn() {
+        double lat = currentLocation != null ? currentLocation.getLatitude() : 0;
+        double lon = currentLocation != null ? currentLocation.getLongitude() : 0;
+        String msg = "Joseph check-in OK. " + lat + "," + lon;
+        SmsManager.getDefault().sendTextMessage(contacts[0], null, msg, null, null);
+        handler.postDelayed(this::checkIn, 300000);
+    }
+
+    private void sendLocationUpdate(Location loc) {
+        String msg = "Location update: " + loc.getLatitude() + "," + loc.getLongitude();
+        SmsManager.getDefault().sendTextMessage(contacts[1], null, msg, null, null);
+    }
+}

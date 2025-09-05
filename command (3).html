@@ -1,0 +1,93 @@
+```java
+package com.joseph.emergencyops;
+
+import android.Manifest;
+import android.app.Activity;
+import android.location.Location;
+import android.os.Bundle;
+import android.os.Handler;
+import android.telephony.SmsManager;
+import android.view.View;
+import android.widget.Button;
+import android.widget.Toast;
+import androidx.core.app.ActivityCompat;
+import com.google.android.gms.location.*;
+
+public class MainActivity extends Activity {
+
+    private FusedLocationProviderClient locationClient;
+    private Location currentLocation;
+    private Handler handler = new Handler();
+    private final String[] extractionContacts = {
+        "+1234567890", // Extraction team
+        "+1987654321"  // Alt contact
+    };
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+        ActivityCompat.requestPermissions(this, new String[]{
+            Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.SEND_SMS
+        }, 1);
+
+        locationClient = LocationServices.getFusedLocationProviderClient(this);
+
+        Button btnExtraction = findViewById(R.id.btnExtraction);
+        btnExtraction.setOnClickListener(v -> sendExtractionSignal("MANUAL_ALERT"));
+
+        Button btnLiquidity = findViewById(R.id.btnLiquidity);
+        btnLiquidity.setOnClickListener(v -> sendLiquidityRequest("5000", "CashApp"));
+
+        handler.postDelayed(this::checkIn, 300000); // check-in every 5 min
+        startLocationTracking();
+    }
+
+    private void startLocationTracking() {
+        handler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                locationClient.getLastLocation().addOnSuccessListener(loc -> {
+                    if (loc != null) {
+                        currentLocation = loc;
+                        sendLocationUpdate(loc);
+                    }
+                });
+                handler.postDelayed(this, 60000); // track every min
+            }
+        }, 1000);
+    }
+
+    private void sendExtractionSignal(String protocolType) {
+        double lat = currentLocation != null ? currentLocation.getLatitude() : 0;
+        double lon = currentLocation != null ? currentLocation.getLongitude() : 0;
+        String msg = "[EXTRACTION] Joseph urgent " + protocolType 
+                   + " https://maps.google.com/maps?q=" + lat + "," + lon;
+        for (String contact : extractionContacts)
+            SmsManager.getDefault().sendTextMessage(contact, null, msg, null, null);
+        Toast.makeText(this, "Extraction signal sent!", Toast.LENGTH_SHORT).show();
+    }
+
+    private void sendLiquidityRequest(String amount, String route) {
+        String msg = "Liquidity: $" + amount + " to " + route + ", Loc: " + 
+            (currentLocation != null ? currentLocation.getLatitude() : 0) + "," +
+            (currentLocation != null ? currentLocation.getLongitude() : 0);
+        SmsManager.getDefault().sendTextMessage(extractionContacts[0], null, msg, null, null);
+    }
+
+    private void checkIn() {
+        double lat = currentLocation != null ? currentLocation.getLatitude() : 0;
+        double lon = currentLocation != null ? currentLocation.getLongitude() : 0;
+        String msg = "Joseph check-in OK. " + lat + "," + lon;
+        SmsManager.getDefault().sendTextMessage(extractionContacts[0], null, msg, null, null);
+        handler.postDelayed(this::checkIn, 300000);
+    }
+
+    private void sendLocationUpdate(Location loc) {
+        String msg = "Location update: " + loc.getLatitude() + "," + loc.getLongitude();
+        SmsManager.getDefault().sendTextMessage(extractionContacts[1], null, msg, null, null);
+    }
+}
+```
+
+
