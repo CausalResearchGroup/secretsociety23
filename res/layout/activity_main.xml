@@ -1,0 +1,49 @@
+private void sendEmergencyAlert() {
+        if (currentLocation == null) {
+            Toast.makeText(this, "Waiting for location. Try again shortly.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        String message = "EMERGENCY ALERT from Joseph Greggory Pitner.\nLocation: https://maps.google.com/?q="
+                + currentLocation.getLatitude() + "," + currentLocation.getLongitude();
+
+        SmsManager smsManager = SmsManager.getDefault();
+        for (String contact : emergencyContacts) {
+            smsManager.sendTextMessage(contact, null, message, null, null);
+        }
+        Toast.makeText(this, "Emergency alert sent!", Toast.LENGTH_SHORT).show();
+    }
+
+    private void startPeriodicCheckIn() {
+        handler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                if (currentLocation != null) {
+                    String checkinMsg = "Joseph Check-In OK\nLocation: https://maps.google.com/?q="
+                            + currentLocation.getLatitude() + "," + currentLocation.getLongitude();
+                    SmsManager.getDefault().sendTextMessage(emergencyContacts[0], null, checkinMsg, null, null);
+                }
+                handler.postDelayed(this, 300000); // repeat every 5 minutes
+            }
+        }, 60000); // Start after 1 minute
+    }
+}
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout 
+   xmlns:android="http://schemas.android.com/apk/res/android"
+   android:layout_width="match_parent"
+   android:layout_height="match_parent"
+   android:padding="24dp"
+   android:background="#33000000">
+
+    <Button
+        android:id="@+id/btnEmergencyAlert"
+        android:layout_width="match_parent"
+        android:layout_height="80dp"
+        android:text="SEND EMERGENCY ALERT"
+        android:textSize="24sp"
+        android:textColor="#FFFFFF"
+        android:background="#DD0000"
+        android:layout_centerInParent="true"
+        android:layout_margin="20dp" />
+
+</RelativeLayout>
